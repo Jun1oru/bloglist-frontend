@@ -1,0 +1,21 @@
+.notification,
+.success,
+.error {
+    background: lightgray;
+    font-size: 16px;
+}
+
+.notification {
+    color: yellow;
+    border: 2px solid yellow;
+}
+
+.success {
+    color: green;
+    border: 2px solid green;
+}
+
+.error {
+    color: red;
+    border: 2px solid red;
+}
