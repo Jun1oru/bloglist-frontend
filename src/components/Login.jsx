@@ -1,83 +1,74 @@
-import { useState, useEffect } from 'react';
-import blogService from '../services/blogs';
-import loginService from '../services/login';
-import PropTypes from 'prop-types';
+import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { loginUser, setLoggedUser } from "../reducers/loggedUserReducer";
+import { setNotification } from "../reducers/notificationReducer";
 
-const Login = ({ setUser, handleNotificationMsg }) => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
 
-    useEffect(() => {
-        const loggedUserJSON = window.localStorage.getItem('loggedBlogappUser');
-        if (loggedUserJSON) {
-            const user = JSON.parse(loggedUserJSON);
-            setUser(user);
-            blogService.setToken(user.token);
-        }
-    }, []);
+const Login = () => {
+  const dispatch = useDispatch();
 
-    const handleLogin = async (event) => {
-        event.preventDefault();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-        try {
-            const user = await loginService.login({
-                username, password,
-            });
+  useEffect(() => {
+    dispatch(setLoggedUser());
+  }, []);
 
-            window.localStorage.setItem('loggedBlogappUser', JSON.stringify(user));
-            blogService.setToken(user.token);
-            setUser(user);
-            setUsername('');
-            setPassword('');
+  const handleLogin = async (event) => {
+    event.preventDefault();
 
-            handleNotificationMsg({
-                text: `Logged in as ${user.name} successfully!`,
-                type: 'success',
-            });
-        } catch (exception) {
-            handleNotificationMsg({
-                text: exception.response.data.error,
-                type: 'error',
-            });
-        }
+    try {
+      dispatch(loginUser(username, password));
+      setUsername("");
+      setPassword("");
+
+      dispatch(
+        setNotification({
+          type: "success",
+          text: `Logged in as ${username} successfully!`,
+        }),
+      );
+    } catch (exception) {
+      dispatch(
+        setNotification({
+          type: "error",
+          text: exception,
+        }),
+      );
     }
+  };
 
-    return (
-        <>
-            <form onSubmit={handleLogin}>
-                <div>
-                    username
-                    <input
-                        data-testid="inputUsername"
-                        type="text"
-                        value={username}
-                        name="Username"
-                        onChange={({ target }) => setUsername(target.value)}
-                    />
-                </div>
-                <div>
-                    password
-                    <input
-                        data-testid="inputPassword"
-                        type="password"
-                        value={password}
-                        name="Password"
-                        onChange={({ target }) => setPassword(target.value)}
-                    />
-                </div>
-                <button
-                    type="submit"
-                    data-testid="loginButton"
-                >
-                    login
-                </button>
-            </form>
-        </>
-    );
-}
-Login.propTypes = {
-    setUser: PropTypes.func.isRequired,
-    handleNotificationMsg: PropTypes.func.isRequired
+  return (
+    <Form onSubmit={handleLogin}>
+      <Form.Group className="mb-3">
+        <Form.Label>username:</Form.Label>
+        <Form.Control
+          data-testid="inputUsername"
+          type="text"
+          value={username}
+          name="Username"
+          onChange={({ target }) => setUsername(target.value)}
+        />
+      </Form.Group>
+      <Form.Group className="mb-3">
+        <Form.Label>password:</Form.Label>
+        <Form.Control
+          data-testid="inputPassword"
+          type="password"
+          value={password}
+          name="Password"
+          onChange={({ target }) => setPassword(target.value)}
+        />
+      </Form.Group>
+      <div className="text-center">
+        <Button variant="primary" type="submit" data-testid="loginButton">
+          Login
+        </Button>
+      </div>
+    </Form>
+  );
 };
 
 export default Login;

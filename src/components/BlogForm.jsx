@@ -1,67 +1,79 @@
-import { useState } from "react"
-import blogService from '../services/blogs';
-import PropTypes from "prop-types";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { createBlog } from "../reducers/blogReducer";
+import { setNotification } from "../reducers/notificationReducer";
 
-const BlogForm = ({ createBlog }) => {
-    const [title, setTitle] = useState('');
-    const [author, setAuthor] = useState('');
-    const [url, setUrl] = useState('');
+import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
 
-    const addBlog = (event) => {
-        event.preventDefault();
-        createBlog({
-            title,
-            author,
-            url,
-        });
+const BlogForm = (props) => {
+  const dispatch = useDispatch();
 
-        setTitle('');
-        setAuthor('');
-        setUrl('');
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [url, setUrl] = useState("");
+
+  const addBlog = (event) => {
+    event.preventDefault();
+    try {
+      dispatch(createBlog({ title, author, url }));
+      dispatch(
+        setNotification({
+          type: "success",
+          text: `a new blog ${title} by ${author} added`,
+        }),
+      );
+      setTitle("");
+      setAuthor("");
+      setUrl("");
+      props.toggleVisibility();
+    } catch (exception) {
+      dispatch(
+        setNotification({
+          type: "error",
+          text: exception.response.data.error,
+        }),
+      );
     }
-    
-    return (
-        <div>
-            <h2>create new</h2>
-            <form onSubmit={addBlog}>
-                <div>
-                    title:
-                    <input
-                        data-testid="inputTitle"
-                        value={title}
-                        onChange={event => setTitle(event.target.value)}
-                        placeholder="input title"
-                    />
-                </div>
-                <div>
-                    author:
-                    <input
-                        data-testid="inputAuthor"
-                        value={author}
-                        onChange={event => setAuthor(event.target.value)}
-                        placeholder="input author"
-                    />
-                </div>
-                <div>
-                    url:
-                    <input
-                        data-testid="inputUrl"
-                        value={url}
-                        onChange={event => setUrl(event.target.value)}
-                        placeholder="input url"
-                    />
-                </div>
-                <button data-testid="createBlog"
-                    type="submit"
-                >
-                    create
-                </button>
-            </form>
-        </div>
-    );
-}
-BlogForm.propTypes = {
-    createBlog: PropTypes.func.isRequired
+  };
+
+  return (
+    <div>
+      <h2>create new</h2>
+      <Form onSubmit={addBlog}>
+        <Form.Group>
+          <Form.Label>title:</Form.Label>
+          <Form.Control
+            data-testid="inputTitle"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="input title"
+          />
+        </Form.Group>
+        <Form.Group>
+          <Form.Label>author:</Form.Label>
+          <Form.Control
+            data-testid="inputAuthor"
+            value={author}
+            onChange={(event) => setAuthor(event.target.value)}
+            placeholder="input author"
+          />
+        </Form.Group>
+        <Form.Group>
+          <Form.Label>url:</Form.Label>
+          <Form.Control
+            data-testid="inputUrl"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            placeholder="input url"
+          />
+        </Form.Group>
+        <Button variant="success" type="submit" className="mt-3">
+          create
+        </Button>
+      </Form>
+    </div>
+  );
 };
 
 export default BlogForm;

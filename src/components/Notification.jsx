@@ -1,24 +1,17 @@
-import PropTypes from "prop-types";
+import { useSelector } from "react-redux";
+import Alert from "react-bootstrap/Alert";
 
-const Notification = ({ message }) => {
-    if (message.text === null)
-        return null;
+const Notification = () => {
+  const notification = useSelector((state) => state.notification);
+  if (notification.text === null) return null;
 
-    return (
-        <div className={message.type === "success"
-            ? "success" :
-            message.type === "error"
-            ? "error" :
-            "notification"
-        }
-            data-testid="notification"
-        >
-            {message.text}
-        </div>
-    );
-}
-Notification.propTypes = {
-    message: PropTypes.object.isRequired
+  return (
+    <div className="container mt-4">
+      <Alert variant={notification.type} data-testid="notification">
+        {notification.text}
+      </Alert>
+    </div>
+  );
 };
 
 export default Notification;

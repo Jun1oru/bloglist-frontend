@@ -1,168 +1,72 @@
-import { useState, useEffect, useRef } from 'react'
-import Blog from './components/Blog'
-import blogService from './services/blogs'
-import Login from './components/Login';
-import BlogForm from './components/BlogForm';
-import Notification from './components/Notification';
-import Togglable from './components/Togglable';
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { initializeBlogs } from "./reducers/blogReducer";
+import { initializeUsers } from "./reducers/usersReducer";
+import { Routes, Route, useMatch } from "react-router-dom";
 
+import Blog from "./components/Blog";
+import Login from "./components/Login";
+import Notification from "./components/Notification";
+import UserList from "./components/UserList";
+import User from "./components/User";
+import Home from "./components/Home";
+import Menu from "./components/Menu";
 const App = () => {
-  const [blogs, setBlogs] = useState([])
-  const [user, setUser] = useState(null);
-  const [message, setMessage] = useState({
-    text: null,
-    type: "notification",
-  });
-  const blogFormRef = useRef();
+  const dispatch = useDispatch();
+
+  const blogs = useSelector((state) => state.blogs);
+  const loggedUser = useSelector((state) => state.loggedUser);
+  const users = useSelector((state) => state.users);
+
+  const matchUser = useMatch("/users/:id");
+  const userView = matchUser
+    ? users.find((user) => user.id === matchUser.params.id)
+    : null;
+
+  const matchBlog = useMatch("/blogs/:id");
+  const blogView = matchBlog
+    ? blogs.find((blog) => blog.id === matchBlog.params.id)
+    : null;
 
   useEffect(() => {
-    async function fetchData() {
-      const result = await blogService.getAll();
-      setBlogs(result);
-    }
-
-    fetchData();
-  }, [])
-
-  const sortedBlogs = blogs.sort(function (a, b) { return b.likes - a.likes; });
-
-  const addBlog = async (blogObject) => {
-    try {
-      const result = await blogService.create(blogObject);
-      setBlogs(blogs.concat(result));
-      handleNotificationMsg({
-        text: `a new blog ${result.title} by ${result.author} added`,
-        type: "success"
-      });
-      blogFormRef.current.toggleVisibility();
-    } catch (exception) {
-      handleNotificationMsg({
-        text: exception.response.data.error,
-        type: "error"
-      });
-    }
-  }
-
-  const likeBlog = async (id, blogObject) => {
-    try {
-      const result = await blogService.update(id, blogObject);
-      const updatedBlogs = blogs.map(blog =>
-        blog.id === id ? { ...blog, ...result } : blog
-      );
-      setBlogs(updatedBlogs);
-      handleNotificationMsg({
-        text: `liked ${result.title} by ${result.author}`,
-        type: "success"
-      });
-    } catch (exception) {
-      handleNotificationMsg({
-        text: exception.response.data.error,
-        type: "error"
-      });
-    }
-  }
-
-  const deleteBlog = async (blogObject) => {
-    try {
-      await blogService.remove(blogObject.id);
-      const updatedBlogs = blogs.filter(blog => blog.id !== blogObject.id);
-      setBlogs(updatedBlogs);
-      handleNotificationMsg({
-        text: `blog ${blogObject.title} by ${blogObject.author} deleted`,
-        type: "success"
-      });
-    } catch (exception) {
-      handleNotificationMsg({
-        text: exception.response.data.error,
-        type: "error"
-      });
-    }
-  }
-
-  const handleLogout = () => {
-    try {
-      window.localStorage.removeItem('loggedBlogappUser');
-      blogService.setToken(null);
-      setUser(null);
-      handleNotificationMsg({
-        text: `Logged out!`,
-        type: 'success',
-      });
-    } catch (exception) {
-      console.log(exception);
-    }
-    
-  }
-
-  const handleNotificationMsg = (newMsg) => {
-    setMessage(message => ({
-      ...message,
-      ...newMsg
-    }));
-
-    setTimeout(() => {
-      const resetMsg = {
-        text: null,
-        type: "notification",
-      };
-      setMessage(message => ({
-        ...message,
-        ...resetMsg
-      }));
-    }, 5000);
-  }
+    dispatch(initializeBlogs());
+    dispatch(initializeUsers());
+  }, []);
 
   return (
-    <div>
-      
-      {user === null ?
-        <>
-          <h2
-            data-testid="loginHeader"
-          >
-            Log in to application
-          </h2>
-          <Notification message={message} />
-          <Login
-            setUser={setUser}
-            handleNotificationMsg={handleNotificationMsg}
-          />
-        </> :
-        <>
-          <h2>blogs</h2>
+    <div className="App min-vh-100 d-flex justify-content-center bg-dark text-light">
+      <div className="mt-4">
+        {loggedUser === null ? (
+          <>
+            <div>
+              <h2 data-testid="loginHeader" className="text-center">
+                Log in to application
+              </h2>
+            </div>
+            <Notification />
+            <div className="mt-4">
+              <Login />
+            </div>
+          </>
+        ) : (
+          <>
+            <Menu />
 
-          <Notification message={message} />
+            <h2 className="text-center mt-5">blog app</h2>
 
-          <div
-            data-testid="loggedDiv"
-          >
-            {user.name} logged in
-            <button
-              type="submit"
-              onClick={handleLogout}
-            >
-              logout
-            </button>
-          </div>
-          <Togglable buttonLabel="new blog" ref={blogFormRef}>
-            <BlogForm
-              createBlog={addBlog}
-            />
-          </Togglable>
-          
-          {sortedBlogs.map(blog =>
-            <Blog
-              key={blog.id}
-              blog={blog}
-              likeBlog={likeBlog}
-              deleteBlog={deleteBlog}
-              loggedUser={user}
-            />
-          )}
-        </>
-      }
+            <Notification />
+
+            <Routes>
+              <Route path="/" element={<Home blogs={blogs} />} />
+              <Route path="/blogs/:id" element={<Blog blog={blogView} />} />
+              <Route path="/users" element={<UserList users={users} />} />
+              <Route path="/users/:id" element={<User user={userView} />} />
+            </Routes>
+          </>
+        )}
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;
